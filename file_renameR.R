@@ -3,11 +3,14 @@ typeline <- function(msg = "Enter some text: ") {
     txt <- readline(msg)
   } else {
     cat(msg);
-    txt <- readLines("",n=1);
+    txt <- readLines("stdin",n=1);
   }
   return(txt)
 }
 
+cst_quote <- function(x) {
+  ifelse(is.character(x), "\"", "")
+}
 
 # RENAME FILES ------------------------------------------------------------
 cat("------ RENAME FILE ------\n\n")
@@ -17,11 +20,14 @@ library(tidyverse)
 project_directory <- getwd()
 
 while (TRUE){
-  folder_path <- typeline("Insert doc folder path: ")
+  
+  folder_path <- typeline("\nInsert doc folder path: ")
+  cat(">ACK\n")
   setwd(folder_path)
   cat("Setted wd: ", folder_path, "\n")
   
-  recoursive  <- typeline("Do you want contents of folders? (TRUE, FLASE)")
+  recoursive  <- typeline("\nDo you want contents of folders? (TRUE, FLASE)\n")
+  cat(">ACK\n")
   recoursive <- switch(toupper(recoursive),
                        "T" = TRUE,
                        "TRUE" = TRUE,
@@ -35,13 +41,16 @@ while (TRUE){
                               full.names = FALSE) %>%
     data.frame(old_path = .) %>%
     mutate(id = rownames(.)) %>%
+    mutate(old_path = paste0("\"", old_path, "\"")) %>%
     select(old_path, id)
-  write_csv(old_file_name, "_RENAME_FILE.txt")
+  write_csv(old_file_name, "_RENAME_FILE.txt", quote_escape = "double")
+  
   
   
   # User interaction --------------------------------------------------------
-  print("Please, modify the files names")
-  typeline("Press any key to continue..")
+  cat("\nPlease, modify the files names")
+  typeline("\nAfter, press enter to continue..\n")
+  cat(">ACK\n")
   
   
   # Renaming files ----------------------------------------------------------
@@ -56,17 +65,19 @@ while (TRUE){
     mutate(success = FALSE) %>%
     filter(old_path != new_path)
   
-  print("List of file to be modified")
-  print(file_mapping)
-  typeline("Press any key to continue..")
+  cat("\nList of file to be modified:\n\n")
+  print(select(file_mapping, old_path, new_path))
+  typeline("\nPress enter to confirm and rename")
+  cat(">ACK\n")
   
-  file_mapping$success <- file.rename(file_mapping$old_path, file_mapping$new_path)
+  file_mapping$success <- file.rename(str_replace_all(file_mapping$old_path, "\"", ""),
+                                      str_replace_all(file_mapping$new_path, "\"", ""))
   
-  print("Done")
-
+  str_replace_all(file_mapping$old_path, "\"", "")
+  cat("Done\n\n")
+  Sys.sleep(1)
+  
 }
-
-
 
 
 
